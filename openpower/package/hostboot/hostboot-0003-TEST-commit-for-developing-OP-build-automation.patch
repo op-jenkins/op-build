@@ -1,0 +1,35 @@
+From bf42245b84b1c752f22c32f03292535130e5420e Mon Sep 17 00:00:00 2001
+From: Jay Azurin <jmazurin@us.ibm.com>
+Date: Fri, 10 Apr 2015 11:51:39 -0500
+Subject: [PATCH] TEST commit for developing OP build automation
+
+this commit simply prints a message on the console for all istep 6
+substeps foobar
+
+Change-Id: Ic8dc1fe929053230f402fe826e70919bfed8f910
+RTC: 126512
+---
+ src/usr/initservice/istepdispatcher/istepdispatcher.C | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/src/usr/initservice/istepdispatcher/istepdispatcher.C b/src/usr/initservice/istepdispatcher/istepdispatcher.C
+index aaf476f..c991823 100644
+--- a/src/usr/initservice/istepdispatcher/istepdispatcher.C
++++ b/src/usr/initservice/istepdispatcher/istepdispatcher.C
+@@ -689,6 +689,13 @@ errlHndl_t IStepDispatcher::doIstep(uint32_t i_istep,
+             istepPauseSet(i_istep, i_substep);
+         }
+
++        if (i_istep == 6)
++        {
++#ifdef CONFIG_CONSOLE
++            CONSOLE::displayf(NULL, "OPBUILD CI TEST STRING: " );
++#endif
++        }
++
+ #ifdef CONFIG_BMC_IPMI
+
+         if(theStep->taskflags.fwprogtype != PHASE_NA)
+--
+1.8.2.2
+
