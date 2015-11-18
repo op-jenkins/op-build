@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-FIRESTONE_XML_VERSION ?= 73a89761834bc0243a40d3e76db8bf86db38e1eb
+FIRESTONE_XML_VERSION ?= be972d97b13e711d3fc2bc3ada8c702e50fd3588
 FIRESTONE_XML_SITE ?= $(call github,open-power,firestone-xml,$(FIRESTONE_XML_VERSION))
 
 FIRESTONE_XML_LICENSE = Apache-2.0
