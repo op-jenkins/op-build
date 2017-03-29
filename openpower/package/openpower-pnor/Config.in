@@ -1,6 +1,21 @@
 config BR2_PACKAGE_OPENPOWER_PNOR
         bool "openpower_pnor"
-        default y if (BR2_OPENPOWER_PLATFORM && BR2_powerpc_power8)
+        default y if (BR2_OPENPOWER_PLATFORM)
+        select BR2_PACKAGE_HOSTBOOT
+        select BR2_PACKAGE_HOSTBOOT_BINARIES
+        select BR2_PACKAGE_SKIBOOT
+        select BR2_PACKAGE_OPENPOWER_FFS
+        select BR2_PACKAGE_OCC
+        select BR2_PACKAGE_CAPP_UCODE
+        select BR2_PACKAGE_IMA_CATALOG
+        select BR2_PACKAGE_ZAIUS_XML if (BR2_OPENPOWER_XML_PACKAGE = "zaius-xml")
+        select BR2_PACKAGE_WITHERSPOON_XML if (BR2_OPENPOWER_XML_PACKAGE = "witherspoon-xml")
+        select BR2_PACKAGE_ROMULUS_XML if (BR2_OPENPOWER_XML_PACKAGE = "romulus-xml")
+        select BR2_PACKAGE_BARRELEYE_XML if (BR2_OPENPOWER_XML_PACKAGE = "barreleye-xml")
+        select BR2_PACKAGE_FIRESTONE_XML if (BR2_OPENPOWER_XML_PACKAGE = "firestone-xml")
+        select BR2_PACKAGE_GARRISON_XML if (BR2_OPENPOWER_XML_PACKAGE = "garrison-xml")
+        select BR2_PACKAGE_HABANERO_XML if (BR2_OPENPOWER_XML_PACKAGE = "habanero-xml")
+        select BR2_PACKAGE_PALMETTO_XML if (BR2_OPENPOWER_XML_PACKAGE = "palmetto-xml")
         help
             Utilites for building a targeting binary image
 
@@ -33,13 +48,24 @@ config BR2_SKIBOOT_LID_NAME
         string "Name of skiboot lid name to be used"
         default "skiboot.lid"
         help
-            String used to define sapphire lid filename
+            String used to define skiboot lid filename
+
+config BR2_TARGET_SKIBOOT_XZ
+        boolean "Compress the skiboot image with XZ"
+        select BR2_OPENPOWER_PNOR_XZ_ENABLED
+        default y
+
+config BR2_SKIBOOT_LID_XZ_NAME
+        string "Name of compressed skiboot lid"
+        default "skiboot.lid" if !BR2_TARGET_SKIBOOT_XZ
+        default "skiboot.lid.xz" if BR2_TARGET_SKIBOOT_XZ
+        help
+            String used to define compressed skiboot lid filename
 
 config BR2_HOSTBOOT_BINARY_SBE_FILENAME
         string "Name of sbe hostboot binary"
         help
             String used to define name of sbe hostboot binary file
-
 
 config BR2_HOSTBOOT_BINARY_SBEC_FILENAME
         string "Name of sbec hostboot binary"
@@ -51,6 +77,16 @@ config BR2_HOSTBOOT_BINARY_WINK_FILENAME
         help
             String used to define name of winkle hostboot binary file
 
+config BR2_IMA_CATALOG_FILENAME
+        string "Name of IMA catalog binary"
+        help
+            String used to define name of IMA catalog binary file
+
+config BR2_IMA_CATALOG_ECC_FILENAME
+        string "Name of IMA catalog binary"
+        help
+            String used to define name of IMA catalog binary file, ecc protected
+
 config BR2_OPENPOWER_TARGETING_BIN_FILENAME
         string "Name of openpower binary targeting file"
         help
@@ -60,3 +96,7 @@ config BR2_OPENPOWER_TARGETING_ECC_FILENAME
         string "Name of openpower binary targeting file"
         help
             String used to define name of openpower targeting binary file, ecc protected
+
+config BR2_OPENPOWER_PNOR_XZ_ENABLED
+        bool "Enable xz compression in PNOR payloads"
+        default n

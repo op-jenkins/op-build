@@ -4,11 +4,11 @@
 #
 ################################################################################
 
-GARRISON_XML_VERSION ?= 884bf2466dcc1b63baf92758e50fcc8e2ec551c5
+GARRISON_XML_VERSION ?= 19a516499e1090c20c5a3303db256529ef22c1c9
 GARRISON_XML_SITE ?= $(call github,open-power,garrison-xml,$(GARRISON_XML_VERSION))
 
 GARRISON_XML_LICENSE = Apache-2.0
-GARRISON_XML_DEPENDENCIES = hostboot-install-images openpower-mrw-install-images common-p8-xml-install-images
+GARRISON_XML_DEPENDENCIES = hostboot openpower-mrw common-p8-xml
 
 GARRISON_XML_INSTALL_IMAGES = YES
 GARRISON_XML_INSTALL_TARGET = YES

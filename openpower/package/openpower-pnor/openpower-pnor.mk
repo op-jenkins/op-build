@@ -8,13 +8,18 @@
 # make doesn't care for quotes in the dependencies.
 XML_PACKAGE=$(subst $\",,$(BR2_OPENPOWER_XML_PACKAGE))
 
-OPENPOWER_PNOR_VERSION ?= 40e407735b317d0174645b7543e0a72019709ce2
+OPENPOWER_PNOR_VERSION ?= 52b1b91ea5ea7651688802f72d168139c29c4780
 OPENPOWER_PNOR_SITE ?= $(call github,open-power,pnor,$(OPENPOWER_PNOR_VERSION))
 
 OPENPOWER_PNOR_LICENSE = Apache-2.0
+OPENPOWER_PNOR_LICENSE_FILES = LICENSE
 OPENPOWER_PNOR_DEPENDENCIES = hostboot hostboot-binaries $(XML_PACKAGE) skiboot host-openpower-ffs occ capp-ucode
 
-ifeq ($(BR2_TARGET_SKIBOOT_EMBED_PAYLOAD),n)
+ifeq ($(BR2_PACKAGE_IMA_CATALOG),y)
+OPENPOWER_PNOR_DEPENDENCIES += ima-catalog
+endif
+
+ifeq ($(BR2_PACKAGE_SKIBOOT_EMBED_PAYLOAD),n)
 
 ifeq ($(BR2_TARGET_ROOTFS_INITRAMFS),y)
 OPENPOWER_PNOR_DEPENDENCIES += linux-rebuild-with-initramfs
@@ -23,6 +28,17 @@ OPENPOWER_PNOR_DEPENDENCIES += linux
 endif
 
 endif
+
+ifeq ($(BR2_OPENPOWER_PNOR_XZ_ENABLED),y)
+OPENPOWER_PNOR_DEPENDENCIES += host-xz
+endif
+
+ifeq ($(BR2_OPENPOWER_POWER9),y)
+    OPENPOWER_RELEASE=p9
+else
+    OPENPOWER_RELEASE=p8
+endif
+
 
 OPENPOWER_PNOR_INSTALL_IMAGES = YES
 OPENPOWER_PNOR_INSTALL_TARGET = NO
@@ -33,13 +49,14 @@ OPENPOWER_PNOR_SCRATCH_DIR = $(STAGING_DIR)/openpower_pnor_scratch/
 OPENPOWER_VERSION_DIR = $(STAGING_DIR)/openpower_version
 
 # Subpackages we want to include in the version info (do not include openpower-pnor)
-OPENPOWER_VERSIONED_SUBPACKAGES = hostboot occ skiboot hostboot-binaries $(XML_PACKAGE) capp-ucode
+OPENPOWER_VERSIONED_SUBPACKAGES = skiboot hostboot linux petitboot $(XML_PACKAGE) occ hostboot-binaries capp-ucode
 OPENPOWER_PNOR = openpower-pnor
 
 define OPENPOWER_PNOR_INSTALL_IMAGES_CMDS
         mkdir -p $(OPENPOWER_PNOR_SCRATCH_DIR)
 
         $(TARGET_MAKE_ENV) $(@D)/update_image.pl \
+            -release  $(OPENPOWER_RELEASE) \
             -op_target_dir $(HOSTBOOT_IMAGE_DIR) \
             -hb_image_dir $(HOSTBOOT_IMAGE_DIR) \
             -scratch_dir $(OPENPOWER_PNOR_SCRATCH_DIR) \
@@ -51,16 +68,20 @@ define OPENPOWER_PNOR_INSTALL_IMAGES_CMDS
             -wink_binary_filename $(BR2_HOSTBOOT_BINARY_WINK_FILENAME) \
             -occ_binary_filename $(OCC_STAGING_DIR)/$(BR2_OCC_BIN_FILENAME) \
             -capp_binary_filename $(BINARIES_DIR)/$(BR2_CAPP_UCODE_BIN_FILENAME) \
-            -openpower_version_filename $(OPENPOWER_PNOR_VERSION_FILE)
+            -ima_catalog_binary_filename $(BINARIES_DIR)/$(BR2_IMA_CATALOG_FILENAME) \
+            -openpower_version_filename $(OPENPOWER_PNOR_VERSION_FILE) \
+            -payload $(BINARIES_DIR)/$(BR2_SKIBOOT_LID_NAME) \
+            $(if ($(BR2_OPENPOWER_PNOR_XZ_ENABLED),y),-xz_compression)
 
         mkdir -p $(STAGING_DIR)/pnor/
         $(TARGET_MAKE_ENV) $(@D)/create_pnor_image.pl \
-            -xml_layout_file $(@D)/$(BR2_OPENPOWER_PNOR_XML_LAYOUT_FILENAME) \
+            -release $(OPENPOWER_RELEASE) \
+            -xml_layout_file $(@D)/"$(OPENPOWER_RELEASE)"Layouts/$(BR2_OPENPOWER_PNOR_XML_LAYOUT_FILENAME) \
             -pnor_filename $(STAGING_DIR)/pnor/$(BR2_OPENPOWER_PNOR_FILENAME) \
             -hb_image_dir $(HOSTBOOT_IMAGE_DIR) \
             -scratch_dir $(OPENPOWER_PNOR_SCRATCH_DIR) \
             -outdir $(STAGING_DIR)/pnor/ \
-            -payload $(BINARIES_DIR)/$(BR2_SKIBOOT_LID_NAME) \
+            -payload $(BINARIES_DIR)/$(BR2_SKIBOOT_LID_XZ_NAME) \
             -bootkernel $(BINARIES_DIR)/$(LINUX_IMAGE_NAME) \
             -sbe_binary_filename $(BR2_HOSTBOOT_BINARY_SBE_FILENAME) \
             -sbec_binary_filename $(BR2_HOSTBOOT_BINARY_SBEC_FILENAME) \

@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-PETITBOOT_VERSION = d171258160f7ed4756531f51e66fb116753bc990
-PETITBOOT_SITE = git://github.com/open-power/petitboot.git
+PETITBOOT_VERSION = v1.4.2
+PETITBOOT_SITE ?= $(call github,open-power,petitboot,$(PETITBOOT_VERSION))
 PETITBOOT_DEPENDENCIES = ncurses udev host-bison host-flex lvm2
 PETITBOOT_LICENSE = GPLv2
 PETITBOOT_LICENSE_FILES = COPYING
@@ -17,10 +17,19 @@ PETITBOOT_CONF_OPTS += --with-ncurses --without-twin-x11 --without-twin-fbdev \
 	      --localstatedir=/var \
 	      HOST_PROG_KEXEC=/usr/sbin/kexec \
 	      HOST_PROG_SHUTDOWN=/usr/libexec/petitboot/bb-kexec-reboot \
-	      $(if $(BR2_PACKAGE_BUSYBOX),--with-tftp=busybox)
+	      $(if $(BR2_PACKAGE_BUSYBOX),--with-tftp=busybox --enable-busybox)
+
+PETITBOOT_AUTORECONF_ENV += PETITBOOT_VERSION=`cat $(PETITBOOT_VERSION_FILE) | cut -d '-' -f 2-`
 
 ifdef PETITBOOT_DEBUG
 PETITBOOT_CONF_OPTS += --enable-debug
+endif
+
+ifeq ($(BR2_PACKAGE_PETITBOOT_MTD),y)
+PETITBOOT_CONF_OPTS += --enable-mtd
+PETITBOOT_DEPENDENCIES += libflash
+PETITBOOT_CPPFLAGS += -I$(STAGING_DIR)
+PETITBOOT_LDFLAGS += -L$(STAGING_DIR)
 endif
 
 ifeq ($(BR2_PACKAGE_NCURSES_WCHAR),y)
@@ -35,28 +44,30 @@ define PETITBOOT_POST_INSTALL
 	$(INSTALL) -d -m 0755 $(TARGET_DIR)/etc/petitboot/boot.d
 	$(INSTALL) -D -m 0755 $(@D)/utils/hooks/01-create-default-dtb \
 		$(TARGET_DIR)/etc/petitboot/boot.d/
-	$(INSTALL) -D -m 0755 $(@D)/utils/hooks/20-set-stdout \
+	$(INSTALL) -D -m 0755 $(@D)/utils/hooks/30-dtb-updates \
 		$(TARGET_DIR)/etc/petitboot/boot.d/
 	$(INSTALL) -D -m 0755 $(@D)/utils/hooks/90-sort-dtb \
 		$(TARGET_DIR)/etc/petitboot/boot.d/
 
-	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL)/package/petitboot/S14silence-console \
+	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL_OP_BUILD_PATH)/package/petitboot/S14silence-console \
 		$(TARGET_DIR)/etc/init.d/
-	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL)/package/petitboot/S15pb-discover \
+	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL_OP_BUILD_PATH)/package/petitboot/S15pb-discover \
 		$(TARGET_DIR)/etc/init.d/
-	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL)/package/petitboot/kexec-restart \
+	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL_OP_BUILD_PATH)/package/petitboot/kexec-restart \
 		$(TARGET_DIR)/usr/sbin/
-	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL)/package/petitboot/petitboot-console-ui.rules \
+	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL_OP_BUILD_PATH)/package/petitboot/petitboot-console-ui.rules \
 		$(TARGET_DIR)/etc/udev/rules.d/
-	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL)/package/petitboot/removable-event-poll.rules \
+	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL_OP_BUILD_PATH)/package/petitboot/removable-event-poll.rules \
 		$(TARGET_DIR)/etc/udev/rules.d/
-	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL)/package/petitboot/63-md-raid-arrays.rules \
+	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL_OP_BUILD_PATH)/package/petitboot/63-md-raid-arrays.rules \
 		$(TARGET_DIR)/etc/udev/rules.d/
-	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL)/package/petitboot/65-md-incremental.rules \
+	$(INSTALL) -D -m 0755 $(BR2_EXTERNAL_OP_BUILD_PATH)/package/petitboot/65-md-incremental.rules \
 		$(TARGET_DIR)/etc/udev/rules.d/
 
 	ln -sf /usr/sbin/pb-udhcpc \
 		$(TARGET_DIR)/usr/share/udhcpc/default.script.d/
+
+	mkdir -p $(TARGET_DIR)/var/log/petitboot
 
 	$(MAKE) -C $(@D)/po DESTDIR=$(TARGET_DIR) install
 endef
